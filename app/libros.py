@@ -17,7 +17,7 @@ async def crear_libro(titulo: str, autor: str, genero: str):
         conn = database.getConnection()
         cursor = conn.cursor()
 
-        insert_query = "INSERT INTO Libros (titulo, autor, genero) VALUES (%s, %s, %s) RETURNING libro_id, titulo, autor, genero"
+        insert_query = "INSERT INTO Libros (titulo, autor, genero) VALUES (%s, %s, %s) RETURNING id, titulo, autor, genero"
         cursor.execute(insert_query, (titulo, autor, genero))
         libro_details = cursor.fetchone()
 
@@ -26,7 +26,7 @@ async def crear_libro(titulo: str, autor: str, genero: str):
 
         if libro_details:
             libro = {
-                "libro_id": libro_details[0],
+                "id": libro_details[0],
                 "titulo": libro_details[1],
                 "autor": libro_details[2],
                 "genero": libro_details[3]
@@ -46,7 +46,7 @@ async def obtener_libros():
         conn = database.getConnection()
         cursor = conn.cursor()
 
-        query = "SELECT libro_id, titulo, autor, genero FROM Libros"
+        query = "SELECT id, titulo, autor, genero FROM Libros"
         cursor.execute(query)
         libros = cursor.fetchall()
 
@@ -56,7 +56,7 @@ async def obtener_libros():
             libros_list = []
             for libro_details in libros:
                 libro = {
-                    "libro_id": libro_details[0],
+                    "id": libro_details[0],
                     "titulo": libro_details[1],
                     "autor": libro_details[2],
                     "genero": libro_details[3]
@@ -67,7 +67,7 @@ async def obtener_libros():
             return []
 
     except Exception as e:
-        return {"error": 'Error al obtener los libros'}
+        return {"error": 'Error al obtener los libros', "exception": e}
 
 
 @router_libros.get("/libros/{libro_id}", tags=["Libros"])
@@ -76,7 +76,7 @@ async def obtener_libro_por_id(libro_id: int):
         conn = database.getConnection()
         cursor = conn.cursor()
 
-        query = "SELECT libro_id, titulo, autor, genero FROM Libros WHERE libro_id = %s"
+        query = "SELECT id, titulo, autor, genero FROM Libros WHERE id = %s"
         cursor.execute(query, (libro_id,))
         libro_details = cursor.fetchone()
 
@@ -84,7 +84,7 @@ async def obtener_libro_por_id(libro_id: int):
 
         if libro_details:
             libro = {
-                "libro_id": libro_details[0],
+                "id": libro_details[0],
                 "titulo": libro_details[1],
                 "autor": libro_details[2],
                 "genero": libro_details[3]
@@ -103,14 +103,14 @@ async def actualizar_libro(libro_id: int, libro_data: LibroActualizar):
         conn = database.getConnection()
         cursor = conn.cursor()
 
-        update_query = "UPDATE Libros SET titulo = %s, autor = %s, genero = %s WHERE libro_id = %s"
+        update_query = "UPDATE Libros SET titulo = %s, autor = %s, genero = %s WHERE id = %s"
         cursor.execute(update_query, (libro_data.titulo,
                        libro_data.autor, libro_data.genero, libro_id))
 
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Libro no encontrado")
 
-        select_query = "SELECT libro_id, titulo, autor, genero FROM Libros WHERE libro_id = %s"
+        select_query = "SELECT id, titulo, autor, genero FROM Libros WHERE id = %s"
         cursor.execute(select_query, (libro_id,))
         libro_details = cursor.fetchone()
 
@@ -118,7 +118,7 @@ async def actualizar_libro(libro_id: int, libro_data: LibroActualizar):
         conn.close()
 
         libro_actualizado = {
-            "libro_id": libro_details[0],
+            "id": libro_details[0],
             "titulo": libro_details[1],
             "autor": libro_details[2],
             "genero": libro_details[3]
@@ -137,7 +137,7 @@ async def eliminar_libro(libro_id: int):
         cursor = conn.cursor()
 
         # Verificar si el libro existe antes de eliminarlo
-        existencia_query = "SELECT libro_id FROM Libros WHERE libro_id = %s"
+        existencia_query = "SELECT id FROM Libros WHERE id = %s"
         cursor.execute(existencia_query, (libro_id,))
         existe_libro = cursor.fetchone()
 
@@ -145,7 +145,7 @@ async def eliminar_libro(libro_id: int):
             raise HTTPException(status_code=404, detail="Libro no encontrado")
 
         # Eliminar el libro
-        delete_query = "DELETE FROM Libros WHERE libro_id = %s RETURNING libro_id, titulo, autor, genero"
+        delete_query = "DELETE FROM Libros WHERE id = %s RETURNING id, titulo, autor, genero"
         cursor.execute(delete_query, (libro_id,))
         libro_eliminado = cursor.fetchone()
 
@@ -154,7 +154,7 @@ async def eliminar_libro(libro_id: int):
 
         if libro_eliminado:
             libro = {
-                "libro_id": libro_eliminado[0],
+                "id": libro_eliminado[0],
                 "titulo": libro_eliminado[1],
                 "autor": libro_eliminado[2],
                 "genero": libro_eliminado[3]
@@ -166,3 +166,4 @@ async def eliminar_libro(libro_id: int):
 
     except Exception as e:
         return {"error": 'Error al eliminar el libro'}
+
